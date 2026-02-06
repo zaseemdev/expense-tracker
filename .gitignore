@@ -23,5 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
+# Test coverage
+coverage/
+
+# TDD Guard state
+.claude/tdd-guard/
+
 # Slice workflow (transient, local-only)
 .slices/CONTINUE.md
