@@ -1,218 +1,99 @@
-"use client";
-
 import {
   Authenticated,
   Unauthenticated,
-  useConvexAuth,
-  useMutation,
-  useQuery,
 } from "convex/react";
-import { api } from "../convex/_generated/api";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useState } from "react";
 
 export default function App() {
   return (
     <>
-      <header className="sticky top-0 z-10 bg-light dark:bg-dark p-4 border-b-2 border-slate-200 dark:border-slate-800">
-        Convex + React + Convex Auth
-        <SignOutButton />
-      </header>
-      <main className="p-8 flex flex-col gap-16">
-        <h1 className="text-4xl font-bold text-center">
-          Convex + React + Convex Auth
-        </h1>
-        <Authenticated>
-          <Content />
-        </Authenticated>
-        <Unauthenticated>
-          <SignInForm />
-        </Unauthenticated>
-      </main>
+      <Authenticated>
+        <AuthenticatedShell />
+      </Authenticated>
+      <Unauthenticated>
+        <SignInScreen />
+      </Unauthenticated>
     </>
   );
 }
 
-function SignOutButton() {
-  const { isAuthenticated } = useConvexAuth();
-  const { signOut } = useAuthActions();
-  return (
-    <>
-      {isAuthenticated && (
-        <button
-          className="bg-slate-200 dark:bg-slate-800 text-dark dark:text-light rounded-md px-2 py-1"
-          onClick={() => void signOut()}
-        >
-          Sign out
-        </button>
-      )}
-    </>
-  );
-}
-
-function SignInForm() {
+function SignInScreen() {
   const { signIn } = useAuthActions();
-  const [flow, setFlow] = useState<"signIn" | "signUp">("signIn");
-  const [error, setError] = useState<string | null>(null);
+
   return (
-    <div className="flex flex-col gap-8 w-96 mx-auto">
-      <p>Log in to see the numbers</p>
-      <form
-        className="flex flex-col gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target as HTMLFormElement);
-          formData.set("flow", flow);
-          void signIn("password", formData).catch((error) => {
-            setError(error.message);
-          });
-        }}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 text-white px-6">
+      <div className="flex flex-col items-center gap-2 mb-10">
+        <h1 className="text-3xl font-bold">SplitEase</h1>
+        <p className="text-zinc-400 text-sm">Split expenses with roommates</p>
+      </div>
+
+      <button
+        onClick={() => void signIn("google")}
+        className="flex items-center gap-3 bg-white text-zinc-900 font-medium rounded-full px-6 py-3 shadow-md hover:shadow-lg transition-shadow"
       >
-        <input
-          className="bg-light dark:bg-dark text-dark dark:text-light rounded-md p-2 border-2 border-slate-200 dark:border-slate-800"
-          type="email"
-          name="email"
-          placeholder="Email"
-        />
-        <input
-          className="bg-light dark:bg-dark text-dark dark:text-light rounded-md p-2 border-2 border-slate-200 dark:border-slate-800"
-          type="password"
-          name="password"
-          placeholder="Password"
-        />
-        <button
-          className="bg-dark dark:bg-light text-light dark:text-dark rounded-md"
-          type="submit"
-        >
-          {flow === "signIn" ? "Sign in" : "Sign up"}
-        </button>
-        <div className="flex flex-row gap-2">
-          <span>
-            {flow === "signIn"
-              ? "Don't have an account?"
-              : "Already have an account?"}
-          </span>
-          <span
-            className="text-dark dark:text-light underline hover:no-underline cursor-pointer"
-            onClick={() => setFlow(flow === "signIn" ? "signUp" : "signIn")}
-          >
-            {flow === "signIn" ? "Sign up instead" : "Sign in instead"}
-          </span>
-        </div>
-        {error && (
-          <div className="bg-red-500/20 border-2 border-red-500/50 rounded-md p-2">
-            <p className="text-dark dark:text-light font-mono text-xs">
-              Error signing in: {error}
-            </p>
-          </div>
-        )}
-      </form>
+        <GoogleIcon />
+        Continue with Google
+      </button>
+
+      <div className="flex items-center gap-3 mt-6 w-64">
+        <div className="flex-1 h-px bg-zinc-700" />
+        <span className="text-zinc-500 text-xs">secure sign in</span>
+        <div className="flex-1 h-px bg-zinc-700" />
+      </div>
+
+      <p className="absolute bottom-8 text-zinc-600 text-xs text-center px-8">
+        By continuing, you agree to our Terms of Service
+      </p>
     </div>
   );
 }
 
-function Content() {
-  const { viewer, numbers } =
-    useQuery(api.myFunctions.listNumbers, {
-      count: 10,
-    }) ?? {};
-  const addNumber = useMutation(api.myFunctions.addNumber);
+function GoogleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+      <path
+        d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
+        fill="#4285F4"
+      />
+      <path
+        d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z"
+        fill="#34A853"
+      />
+      <path
+        d="M3.964 10.706A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.038l3.007-2.332z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.962L3.964 7.294C4.672 5.166 6.656 3.58 9 3.58z"
+        fill="#EA4335"
+      />
+    </svg>
+  );
+}
 
-  if (viewer === undefined || numbers === undefined) {
-    return (
-      <div className="mx-auto">
-        <p>loading... (consider a loading skeleton)</p>
-      </div>
-    );
-  }
+function AuthenticatedShell() {
+  const { signOut } = useAuthActions();
 
   return (
-    <div className="flex flex-col gap-8 max-w-lg mx-auto">
-      <p>Welcome {viewer ?? "Anonymous"}!</p>
-      <p>
-        Click the button below and open this page in another window - this data
-        is persisted in the Convex cloud database!
-      </p>
-      <p>
-        <button
-          className="bg-dark dark:bg-light text-light dark:text-dark text-sm px-4 py-2 rounded-md border-2"
-          onClick={() => {
-            void addNumber({ value: Math.floor(Math.random() * 10) });
-          }}
-        >
-          Add a random number
-        </button>
-      </p>
-      <p>
-        Numbers:{" "}
-        {numbers?.length === 0
-          ? "Click the button!"
-          : (numbers?.join(", ") ?? "...")}
-      </p>
-      <p>
-        Edit{" "}
-        <code className="text-sm font-bold font-mono bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded-md">
-          convex/myFunctions.ts
-        </code>{" "}
-        to change your backend
-      </p>
-      <p>
-        Edit{" "}
-        <code className="text-sm font-bold font-mono bg-slate-200 dark:bg-slate-800 px-1 py-0.5 rounded-md">
-          src/App.tsx
-        </code>{" "}
-        to change your frontend
-      </p>
-      <div className="flex flex-col">
-        <p className="text-lg font-bold">Useful resources:</p>
-        <div className="flex gap-2">
-          <div className="flex flex-col gap-2 w-1/2">
-            <ResourceCard
-              title="Convex docs"
-              description="Read comprehensive documentation for all Convex features."
-              href="https://docs.convex.dev/home"
-            />
-            <ResourceCard
-              title="Stack articles"
-              description="Learn about best practices, use cases, and more from a growing
-            collection of articles, videos, and walkthroughs."
-              href="https://www.typescriptlang.org/docs/handbook/2/basic-types.html"
-            />
-          </div>
-          <div className="flex flex-col gap-2 w-1/2">
-            <ResourceCard
-              title="Templates"
-              description="Browse our collection of templates to get started quickly."
-              href="https://www.convex.dev/templates"
-            />
-            <ResourceCard
-              title="Discord"
-              description="Join our developer community to ask questions, trade tips & tricks,
-            and show off your projects."
-              href="https://www.convex.dev/community"
-            />
-          </div>
-        </div>
-      </div>
+    <div className="min-h-screen bg-zinc-950 text-white">
+      <header className="flex items-center justify-between p-4 border-b border-zinc-800">
+        <h1 className="text-lg font-bold">SplitEase</h1>
+        <SignOutButton onSignOut={() => void signOut()} />
+      </header>
+      <main className="p-4">
+        <p className="text-zinc-400">Welcome to SplitEase</p>
+      </main>
     </div>
   );
 }
 
-function ResourceCard({
-  title,
-  description,
-  href,
-}: {
-  title: string;
-  description: string;
-  href: string;
-}) {
+function SignOutButton({ onSignOut }: { onSignOut: () => void }) {
   return (
-    <div className="flex flex-col gap-2 bg-slate-200 dark:bg-slate-800 p-4 rounded-md h-28 overflow-auto">
-      <a href={href} className="text-sm underline hover:no-underline">
-        {title}
-      </a>
-      <p className="text-xs">{description}</p>
-    </div>
+    <button
+      onClick={onSignOut}
+      className="text-zinc-400 text-sm hover:text-white transition-colors"
+    >
+      Sign out
+    </button>
   );
 }
