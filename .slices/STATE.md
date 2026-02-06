@@ -3,14 +3,14 @@
 **Project:** SplitEase - Roommate Expense Tracker
 **Platform:** Mobile-first (PWA or React Native)
 **Started:** 2026-02-06
-**Current Position:** Slice 0 (not started)
+**Current Position:** Slice 1 (AUTH-1 complete)
 
 ## Progress
 
 - [x] Project slicing complete
 - [x] UI mockups created (13 screens)
-- [ ] Tech stack selection
-- [ ] First slice implementation
+- [x] Tech stack selection
+- [x] First slice implementation (AUTH-1)
 
 ## Session Log
 
@@ -21,6 +21,14 @@
 - Confirmed mobile-first approach
 - Settlement flow with approve/reject designed
 - Navigation pattern: bell icon + banner + settings gear
+
+### 2026-02-06 (Session 2)
+- Completed AUTH-1: Google OAuth sign-in screen
+- Replaced password-based auth with Google OAuth
+- New SignInScreen component with SplitEase branding
+- Backend switched from Password to Google provider
+- 4 tests, 100% coverage
+- Next: PROFILE-1 (display name on first login)
 
 ## Decisions Made
 
@@ -45,9 +53,9 @@
 
 ## Next Steps
 
-1. Choose tech stack
-2. Run `/feather:work-slice` to start AUTH-1
-3. Implement Google OAuth
+1. Run `/feather:work-slice` to start PROFILE-1
+2. Display name entry on first login
+3. Configure Google OAuth env vars in Convex (`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`)
 
 ## Blockers
 

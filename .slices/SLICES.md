@@ -6,7 +6,7 @@
 
 | # | ID | Name | Depends On | Status |
 |---|-----|------|------------|--------|
-| 1 | AUTH-1 | Google OAuth sign in/sign up | — | Pending |
+| 1 | AUTH-1 | Google OAuth sign in/sign up | — | Done |
 | 2 | PROFILE-1 | Enter display name on first login | AUTH-1 | Pending |
 | 3 | ROOM-1 | Create room (creator = admin) | PROFILE-1 | Pending |
 | 4 | ROOM-2 | Request to join room (pending approval) | AUTH-1, PROFILE-1 | Pending |

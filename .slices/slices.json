@@ -9,8 +9,8 @@
       "name": "Google OAuth sign in/sign up",
       "order": 1,
       "depends_on": [],
-      "passes": false,
-      "spec_path": null
+      "passes": true,
+      "spec_path": "docs/specs/auth-1/spec.md"
     },
     {
       "id": "PROFILE-1",
