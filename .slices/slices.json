@@ -30,7 +30,7 @@
     },
     {
       "id": "ROOM-2",
-      "name": "Join room via invite link (as member)",
+      "name": "Request to join room via invite link (pending admin approval)",
       "order": 4,
       "depends_on": ["AUTH-1", "PROFILE-1"],
       "passes": false,
@@ -46,7 +46,7 @@
     },
     {
       "id": "SPLIT-1",
-      "name": "Select roommates to split with (multi-select + select all)",
+      "name": "Select roommates to split with (payer selected by default, can uncheck)",
       "order": 6,
       "depends_on": ["EXPENSE-1"],
       "passes": false,
@@ -93,9 +93,25 @@
       "spec_path": null
     },
     {
+      "id": "ROOM-4",
+      "name": "Admin approves/rejects join requests",
+      "order": 12,
+      "depends_on": ["ROOM-2"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "ROOM-5",
+      "name": "Admin kicks a member from room",
+      "order": 13,
+      "depends_on": ["ROOM-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
       "id": "SETTLE-1",
       "name": "Initiate settlement (tap person, enter amount paid)",
-      "order": 12,
+      "order": 14,
       "depends_on": ["BALANCE-1"],
       "passes": false,
       "spec_path": null
@@ -103,7 +119,7 @@
     {
       "id": "SETTLE-2",
       "name": "View pending settlement requests",
-      "order": 13,
+      "order": 15,
       "depends_on": ["SETTLE-1"],
       "passes": false,
       "spec_path": null
@@ -111,7 +127,7 @@
     {
       "id": "SETTLE-3",
       "name": "Approve/reject received payment",
-      "order": 14,
+      "order": 16,
       "depends_on": ["SETTLE-2"],
       "passes": false,
       "spec_path": null
@@ -119,8 +135,24 @@
     {
       "id": "NOTIFY-1",
       "name": "Settlement notifications (approved/rejected) with resubmit",
-      "order": 15,
+      "order": 17,
       "depends_on": ["SETTLE-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "EXPENSE-3",
+      "name": "Edit expense with audit trail (visible to all members)",
+      "order": 18,
+      "depends_on": ["HISTORY-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "BALANCE-2",
+      "name": "View balance breakdown between two members",
+      "order": 19,
+      "depends_on": ["BALANCE-1"],
       "passes": false,
       "spec_path": null
     }

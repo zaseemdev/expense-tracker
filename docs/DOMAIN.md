@@ -27,6 +27,15 @@ RoomMember
 ├── joinedAt
 └── (composite unique: room + user)
 
+JoinRequest
+├── id (unique)
+├── room → Room
+├── user → User
+├── status: "pending" | "approved" | "rejected"
+├── createdAt
+├── respondedAt (nullable)
+└── respondedBy → User (admin who responded)
+
 Expense
 ├── id (unique)
 ├── room → Room
@@ -43,6 +52,19 @@ ExpenseSplit
 ├── user → User
 ├── amount (decimal, calculated share)
 └── (composite unique: expense + user)
+
+ExpenseEdit
+├── id (unique)
+├── expense → Expense
+├── editedBy → User
+├── editedAt
+├── changes → [FieldChange]
+└── reason (optional note explaining edit)
+
+FieldChange (embedded in ExpenseEdit)
+├── field: "amount" | "description" | "date" | "splits"
+├── oldValue
+└── newValue
 
 Settlement
 ├── id (unique)
@@ -103,6 +125,13 @@ Notification
 - Stores the role (admin/member)
 - Only one admin per room at a time
 - Admin must transfer before leaving
+- Admin can remove (kick) members
+
+### JoinRequest
+- Created when user requests to join via invite link
+- Admin must approve before user becomes member
+- Status: pending → approved/rejected
+- Protects room from malicious users with invite link
 
 ### Expense
 - Paid by one user
@@ -114,6 +143,14 @@ Notification
 - One entry per user included in the split
 - Amount = total expense / number of people
 - Used to calculate balances
+
+### ExpenseEdit
+- Audit trail for expense modifications
+- Only the payer (expense creator) can edit their expenses
+- Records what changed: amount, description, date, or splits
+- Stores old and new values for transparency
+- Visible to all room members in Edit History tab
+- Prevents misuse: everyone can see if someone changed ₹50 to ₹500
 
 ### Settlement
 - Records a payment claim from one user to another
@@ -147,6 +184,10 @@ For User A's balance with User B:
 1. **One room per user:** User can only be in one room at a time
 2. **One admin per room:** Exactly one member has admin role
 3. **Admin transfer required:** Admin cannot leave without appointing successor
-4. **No self-split:** Payer is always included in split by default
-5. **Positive amounts only:** All amounts must be > 0
-6. **Settlement limits:** Cannot settle more than owed amount
+4. **Join requires approval:** Users must be approved by admin to join
+5. **Admin can kick:** Admin can remove any member (except themselves)
+6. **Payer in list:** Payer appears in split list, selected by default, but can uncheck themselves (e.g., buying only for others)
+7. **Positive amounts only:** All amounts must be > 0
+8. **Settlement limits:** Cannot settle more than owed amount
+9. **Edit own expenses only:** Users can only edit expenses they created (paid by them)
+10. **Edit history visible to all:** All expense edits are logged and visible to all room members
