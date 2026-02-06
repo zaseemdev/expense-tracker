@@ -1,0 +1,128 @@
+{
+  "project": "SplitEase - Roommate Expense Tracker",
+  "created": "2026-02-06",
+  "platform": "mobile-first",
+  "description": "Expense tracker for bachelor roommates to split room expenses with UPI settlement flow",
+  "slices": [
+    {
+      "id": "AUTH-1",
+      "name": "Google OAuth sign in/sign up",
+      "order": 1,
+      "depends_on": [],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "PROFILE-1",
+      "name": "Enter display name on first login",
+      "order": 2,
+      "depends_on": ["AUTH-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "ROOM-1",
+      "name": "Create room (creator becomes admin)",
+      "order": 3,
+      "depends_on": ["PROFILE-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "ROOM-2",
+      "name": "Join room via invite link (as member)",
+      "order": 4,
+      "depends_on": ["AUTH-1", "PROFILE-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "EXPENSE-1",
+      "name": "Add expense (date, amount, description)",
+      "order": 5,
+      "depends_on": ["ROOM-1", "ROOM-2"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "SPLIT-1",
+      "name": "Select roommates to split with (multi-select + select all)",
+      "order": 6,
+      "depends_on": ["EXPENSE-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "EXPENSE-2",
+      "name": "Add another expense (sequential entry flow)",
+      "order": 7,
+      "depends_on": ["SPLIT-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "BALANCE-1",
+      "name": "View who owes whom (with pending approval banner)",
+      "order": 8,
+      "depends_on": ["SPLIT-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "HISTORY-1",
+      "name": "View expense history grouped by date",
+      "order": 9,
+      "depends_on": ["EXPENSE-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "SETTINGS-1",
+      "name": "Settings page (rename display name, logout, room info)",
+      "order": 10,
+      "depends_on": ["AUTH-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "ROOM-3",
+      "name": "Leave room (admin must appoint successor)",
+      "order": 11,
+      "depends_on": ["ROOM-1", "ROOM-2"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "SETTLE-1",
+      "name": "Initiate settlement (tap person, enter amount paid)",
+      "order": 12,
+      "depends_on": ["BALANCE-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "SETTLE-2",
+      "name": "View pending settlement requests",
+      "order": 13,
+      "depends_on": ["SETTLE-1"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "SETTLE-3",
+      "name": "Approve/reject received payment",
+      "order": 14,
+      "depends_on": ["SETTLE-2"],
+      "passes": false,
+      "spec_path": null
+    },
+    {
+      "id": "NOTIFY-1",
+      "name": "Settlement notifications (approved/rejected) with resubmit",
+      "order": 15,
+      "depends_on": ["SETTLE-1"],
+      "passes": false,
+      "spec_path": null
+    }
+  ]
+}

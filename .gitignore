@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Slice workflow (transient, local-only)
+.slices/CONTINUE.md
