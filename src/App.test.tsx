@@ -323,6 +323,68 @@ describe("ROOM-2: Join Room", () => {
     ).toBeInTheDocument();
   });
 
+  test("submitting valid invite code creates pending request and shows pending screen", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    // Create a room owned by another user
+    let otherUserId: any;
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Joiner" });
+      otherUserId = await ctx.db.insert("users", { displayName: "Admin" });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Apartment 4B",
+        inviteCode: "ABC123",
+        createdBy: otherUserId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId: otherUserId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /join a room/i }),
+      ).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /join a room/i }));
+    await user.type(screen.getByLabelText("Invite Code"), "ABC123");
+    await user.click(
+      screen.getByRole("button", { name: /request to join/i }),
+    );
+
+    // Verify pending screen shows
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Your request to join Apartment 4B is pending approval",
+        ),
+      ).toBeInTheDocument();
+    });
+    expect(
+      screen.getByText("The room admin will review your request"),
+    ).toBeInTheDocument();
+
+    // Verify database state
+    await testClient.run(async (ctx: any) => {
+      const joinRequest = await ctx.db
+        .query("joinRequests")
+        .withIndex("userId", (q: any) => q.eq("userId", userId))
+        .first();
+      expect(joinRequest).not.toBeNull();
+      expect(joinRequest!.status).toBe("pending");
+    });
+  });
+
   test("back button on join form returns to room choice screen", async ({
     client,
     userId,
