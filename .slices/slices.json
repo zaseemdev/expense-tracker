@@ -17,8 +17,8 @@
       "name": "Enter display name on first login",
       "order": 2,
       "depends_on": ["AUTH-1"],
-      "passes": false,
-      "spec_path": null
+      "passes": true,
+      "spec_path": "docs/specs/profile-1/spec.md"
     },
     {
       "id": "ROOM-1",

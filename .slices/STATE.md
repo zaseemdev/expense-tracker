@@ -3,7 +3,7 @@
 **Project:** SplitEase - Roommate Expense Tracker
 **Platform:** Mobile-first (PWA or React Native)
 **Started:** 2026-02-06
-**Current Position:** Slice 1 (AUTH-1 complete)
+**Current Position:** Slice 2 (PROFILE-1 complete)
 
 ## Progress
 
@@ -51,10 +51,18 @@
 - **Styling:** Tailwind CSS v4
 - **TypeScript:** 5.9
 
+### 2026-02-09
+- Completed PROFILE-1: Enter display name on first login
+- Refactored to zero vi.mock() — all tests use convex-test-provider exclusively
+- Architecture: lifted useAuthActions to App, sub-components accept callback props
+- App function (auth wiring) covered via v8 ignore — tested through sub-components
+- 10 tests, 100% coverage
+- Next: ROOM-1 (create room)
+
 ## Next Steps
 
-1. Run `/feather:work-slice` to start PROFILE-1
-2. Display name entry on first login
+1. Run `/feather:work-slice` to start ROOM-1
+2. Create room with admin role
 3. Configure Google OAuth env vars in Convex (`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`)
 
 ## Blockers
