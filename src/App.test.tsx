@@ -291,6 +291,67 @@ describe("ROOM-1: Create Room", () => {
   });
 });
 
+describe("ROOM-2: Join Room", () => {
+  test("clicking 'Join a Room' shows join form with disabled submit button", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Jaseem" });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /join a room/i }),
+      ).toBeEnabled();
+    });
+
+    await user.click(screen.getByRole("button", { name: /join a room/i }));
+
+    expect(screen.getByText("Join a Room")).toBeInTheDocument();
+    expect(screen.getByLabelText("Invite Code")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /request to join/i }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: /back/i }),
+    ).toBeInTheDocument();
+  });
+
+  test("back button on join form returns to room choice screen", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Jaseem" });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /join a room/i }),
+      ).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /join a room/i }));
+    expect(screen.getByLabelText("Invite Code")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /back/i }));
+
+    expect(screen.getByText("Get Started")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Invite Code")).not.toBeInTheDocument();
+  });
+});
+
 describe("Backend guards: room operations", () => {
   test("createRoom throws when unauthenticated", async ({ testClient }) => {
     await expect(
