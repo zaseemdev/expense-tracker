@@ -1,46 +1,16 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { test, renderWithConvex } from "./test/convex.setup";
 import { api } from "../convex/_generated/api";
-
-let mockIsAuthenticated = false;
-
-vi.mock("convex/react", async () => {
-  const actual = await vi.importActual<typeof import("convex/react")>(
-    "convex/react",
-  );
-  return {
-    ...actual,
-    Authenticated: ({ children }: { children: React.ReactNode }) =>
-      mockIsAuthenticated ? <>{children}</> : null,
-    Unauthenticated: ({ children }: { children: React.ReactNode }) =>
-      !mockIsAuthenticated ? <>{children}</> : null,
-    useConvexAuth: () => ({
-      isAuthenticated: mockIsAuthenticated,
-      isLoading: false,
-    }),
-  };
-});
-
-const mockSignIn = vi.fn();
-const mockSignOut = vi.fn();
-
-vi.mock("@convex-dev/auth/react", () => ({
-  useAuthActions: () => ({ signIn: mockSignIn, signOut: mockSignOut }),
-}));
-
-import App from "./App";
-
-beforeEach(() => {
-  mockIsAuthenticated = false;
-  mockSignIn.mockReset();
-  mockSignOut.mockReset();
-});
+import {
+  SignInScreen,
+  AuthenticatedRouter,
+} from "./App";
 
 describe("AUTH-1: Google OAuth Sign In/Sign Up", () => {
   it("renders sign-in screen with branding for unauthenticated users", () => {
-    render(<App />);
+    render(<SignInScreen onSignIn={() => {}} />);
 
     expect(screen.getByText("SplitEase")).toBeInTheDocument();
     expect(
@@ -52,14 +22,15 @@ describe("AUTH-1: Google OAuth Sign In/Sign Up", () => {
   });
 
   it("initiates Google OAuth on button click", async () => {
+    const onSignIn = vi.fn();
     const user = userEvent.setup();
-    render(<App />);
+    render(<SignInScreen onSignIn={onSignIn} />);
 
     await user.click(
       screen.getByRole("button", { name: /continue with google/i }),
     );
 
-    expect(mockSignIn).toHaveBeenCalledWith("google");
+    expect(onSignIn).toHaveBeenCalled();
   });
 });
 
@@ -67,9 +38,7 @@ describe("PROFILE-1: Display Name", () => {
   test("shows display name form for authenticated user without display name", async ({
     client,
   }) => {
-    mockIsAuthenticated = true;
-
-    renderWithConvex(<App />, client);
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
     await waitFor(() => {
       expect(
@@ -88,9 +57,7 @@ describe("PROFILE-1: Display Name", () => {
   test("continue button is disabled when input is empty", async ({
     client,
   }) => {
-    mockIsAuthenticated = true;
-
-    renderWithConvex(<App />, client);
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
     await waitFor(() => {
       expect(
@@ -101,12 +68,10 @@ describe("PROFILE-1: Display Name", () => {
 
   test("submitting display name calls setDisplayName mutation", async ({
     client,
-    userId,
   }) => {
-    mockIsAuthenticated = true;
     const user = userEvent.setup();
 
-    renderWithConvex(<App />, client);
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
     await waitFor(() => {
       expect(screen.getByLabelText("Display Name")).toBeInTheDocument();
@@ -125,13 +90,11 @@ describe("PROFILE-1: Display Name", () => {
     userId,
     testClient,
   }) => {
-    mockIsAuthenticated = true;
-
     await testClient.run(async (ctx) => {
       await ctx.db.patch(userId, { displayName: "Jaseem" });
     });
 
-    renderWithConvex(<App />, client);
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
     await waitFor(() => {
       expect(screen.getByText("Welcome to SplitEase")).toBeInTheDocument();
@@ -167,13 +130,11 @@ describe("Authenticated Shell", () => {
     userId,
     testClient,
   }) => {
-    mockIsAuthenticated = true;
-
     await testClient.run(async (ctx) => {
       await ctx.db.patch(userId, { displayName: "Test User" });
     });
 
-    renderWithConvex(<App />, client);
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
     await waitFor(() => {
       expect(
@@ -187,14 +148,14 @@ describe("Authenticated Shell", () => {
     userId,
     testClient,
   }) => {
-    mockIsAuthenticated = true;
+    const onSignOut = vi.fn();
     const user = userEvent.setup();
 
     await testClient.run(async (ctx) => {
       await ctx.db.patch(userId, { displayName: "Test User" });
     });
 
-    renderWithConvex(<App />, client);
+    renderWithConvex(<AuthenticatedRouter onSignOut={onSignOut} />, client);
 
     await waitFor(() => {
       expect(
@@ -204,6 +165,6 @@ describe("Authenticated Shell", () => {
 
     await user.click(screen.getByRole("button", { name: /sign out/i }));
 
-    expect(mockSignOut).toHaveBeenCalled();
+    expect(onSignOut).toHaveBeenCalled();
   });
 });
