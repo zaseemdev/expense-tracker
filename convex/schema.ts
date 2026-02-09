@@ -30,4 +30,17 @@ export default defineSchema({
   })
     .index("userId", ["userId"])
     .index("roomId", ["roomId"]),
+
+  joinRequests: defineTable({
+    roomId: v.id("rooms"),
+    userId: v.id("users"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("rejected"),
+    ),
+    createdAt: v.number(),
+  })
+    .index("userId", ["userId"])
+    .index("roomId_status", ["roomId", "status"]),
 });
