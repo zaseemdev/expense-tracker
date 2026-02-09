@@ -3,7 +3,7 @@
 **Project:** SplitEase - Roommate Expense Tracker
 **Platform:** Mobile-first (PWA or React Native)
 **Started:** 2026-02-06
-**Current Position:** Slice 2 (PROFILE-1 complete)
+**Current Position:** Slice 3 (ROOM-1 complete)
 
 ## Progress
 
@@ -59,11 +59,19 @@
 - 10 tests, 100% coverage
 - Next: ROOM-1 (create room)
 
+### 2026-02-09 (Session 2)
+- Completed ROOM-1: Create room (creator becomes admin)
+- Schema: rooms + roomMembers tables
+- Backend: createRoom mutation + getCurrentRoom query
+- Frontend: RoomRouter, RoomGate, RoomChoiceScreen, CreateRoomForm
+- Refactored App.tsx into separate screen files
+- 16 tests, 100% coverage
+- Next: ROOM-2 (join room via invite link)
+
 ## Next Steps
 
-1. Run `/feather:work-slice` to start ROOM-1
-2. Create room with admin role
-3. Configure Google OAuth env vars in Convex (`AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`)
+1. Run `/feather:work-slice` to start ROOM-2
+2. Join room via invite link with pending admin approval
 
 ## Blockers
 

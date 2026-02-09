@@ -3,10 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import { test, renderWithConvex } from "./test/convex.setup";
 import { api } from "../convex/_generated/api";
-import {
-  SignInScreen,
-  AuthenticatedRouter,
-} from "./App";
+import { AuthenticatedRouter } from "./App";
+import { SignInScreen } from "./screens/SignInScreen";
 
 describe("AUTH-1: Google OAuth Sign In/Sign Up", () => {
   it("renders sign-in screen with branding for unauthenticated users", () => {

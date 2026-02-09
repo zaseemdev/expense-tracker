@@ -25,8 +25,8 @@
       "name": "Create room (creator becomes admin)",
       "order": 3,
       "depends_on": ["PROFILE-1"],
-      "passes": false,
-      "spec_path": null
+      "passes": true,
+      "spec_path": "docs/specs/room-1/spec.md"
     },
     {
       "id": "ROOM-2",
