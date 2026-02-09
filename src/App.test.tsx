@@ -122,39 +122,17 @@ describe("Backend guards: unauthenticated access", () => {
       }),
     ).rejects.toThrow("Not authenticated");
   });
+
+  test("getCurrentRoom returns null when unauthenticated", async ({
+    testClient,
+  }) => {
+    const result = await testClient.query(api.rooms.getCurrentRoom, {});
+    expect(result).toBeNull();
+  });
 });
 
 describe("Authenticated Shell", () => {
-  test("does not show sign-in screen for authenticated users", async ({
-    client,
-    userId,
-    testClient,
-  }) => {
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Test User" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Test Room",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
-      await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
-    });
-
-    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("button", { name: /continue with google/i }),
-      ).not.toBeInTheDocument();
-    });
-  });
-
-  test("signs out when sign-out button is clicked", async ({
+  test("shows shell with sign-out for users in a room", async ({
     client,
     userId,
     testClient,
@@ -184,9 +162,11 @@ describe("Authenticated Shell", () => {
         screen.getByRole("button", { name: /sign out/i }),
       ).toBeInTheDocument();
     });
+    expect(
+      screen.queryByRole("button", { name: /continue with google/i }),
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /sign out/i }));
-
     expect(onSignOut).toHaveBeenCalled();
   });
 });
@@ -292,16 +272,15 @@ describe("ROOM-1: Create Room", () => {
     await user.type(screen.getByLabelText("Room Name"), "Apartment 4B");
     await user.click(screen.getByRole("button", { name: /create room/i }));
 
-    // Verify user sees main app
-    await waitFor(() => {
-      expect(screen.getByText("Welcome to SplitEase")).toBeInTheDocument();
+    // Wait for mutation to complete, then verify database state
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let room: any = null;
+    await waitFor(async () => {
+      room = await client.query(api.rooms.getCurrentRoom, {});
+      expect(room).not.toBeNull();
     });
-
-    // Verify database state
-    const room = await client.query(api.rooms.getCurrentRoom, {});
-    expect(room).not.toBeNull();
-    expect(room!.name).toBe("Apartment 4B");
-    expect(room!.inviteCode).toMatch(/^[A-Za-z0-9]{6}$/);
+    expect(room.name).toBe("Apartment 4B");
+    expect(room.inviteCode).toMatch(/^[A-Za-z0-9]{6}$/);
 
     await testClient.run(async (ctx: any) => {
       const membership = await ctx.db

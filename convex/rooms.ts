@@ -16,12 +16,39 @@ export const getCurrentRoom = query({
   },
 });
 
+function generateInviteCode(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
 export const createRoom = mutation({
   args: { name: v.string() },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
-    void args;
-    throw new Error("Not implemented");
+
+    const existing = await ctx.db
+      .query("roomMembers")
+      .withIndex("userId", (q) => q.eq("userId", userId))
+      .first();
+    if (existing) throw new Error("Already in a room");
+
+    const inviteCode = generateInviteCode();
+    const roomId = await ctx.db.insert("rooms", {
+      name: args.name,
+      inviteCode,
+      createdBy: userId,
+    });
+
+    await ctx.db.insert("roomMembers", {
+      roomId,
+      userId,
+      role: "admin",
+      joinedAt: Date.now(),
+    });
   },
 });
