@@ -8,25 +8,33 @@ import {
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../convex/_generated/api";
 
+/* v8 ignore start -- auth wiring: tested via sub-components */
 export default function App() {
+  const { signIn, signOut } = useAuthActions();
+
   return (
     <>
       <Authenticated>
-        <AuthenticatedRouter />
+        <AuthenticatedRouter onSignOut={() => void signOut()} />
       </Authenticated>
       <Unauthenticated>
-        <SignInScreen />
+        <SignInScreen onSignIn={() => void signIn("google")} />
       </Unauthenticated>
     </>
   );
 }
+/* v8 ignore stop */
 
-function AuthenticatedRouter() {
+export function AuthenticatedRouter({
+  onSignOut,
+}: {
+  onSignOut: () => void;
+}) {
   const displayName = useQuery(api.users.getDisplayName);
 
   if (displayName === undefined) return null;
   if (displayName === null) return <DisplayNameForm />;
-  return <AuthenticatedShell />;
+  return <AuthenticatedShell onSignOut={onSignOut} />;
 }
 
 function DisplayNameForm() {
@@ -81,9 +89,7 @@ function DisplayNameForm() {
   );
 }
 
-function SignInScreen() {
-  const { signIn } = useAuthActions();
-
+export function SignInScreen({ onSignIn }: { onSignIn: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 text-white px-6">
       <div className="flex flex-col items-center gap-2 mb-10">
@@ -92,7 +98,7 @@ function SignInScreen() {
       </div>
 
       <button
-        onClick={() => void signIn("google")}
+        onClick={onSignIn}
         className="flex items-center gap-3 bg-white text-zinc-900 font-medium rounded-full px-6 py-3 shadow-md hover:shadow-lg transition-shadow"
       >
         <GoogleIcon />
@@ -135,14 +141,12 @@ function GoogleIcon() {
   );
 }
 
-function AuthenticatedShell() {
-  const { signOut } = useAuthActions();
-
+function AuthenticatedShell({ onSignOut }: { onSignOut: () => void }) {
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
       <header className="flex items-center justify-between p-4 border-b border-zinc-800">
         <h1 className="text-lg font-bold">SplitEase</h1>
-        <SignOutButton onSignOut={() => void signOut()} />
+        <SignOutButton onSignOut={onSignOut} />
       </header>
       <main className="p-4">
         <p className="text-zinc-400">Welcome to SplitEase</p>
