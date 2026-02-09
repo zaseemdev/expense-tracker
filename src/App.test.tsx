@@ -385,6 +385,68 @@ describe("ROOM-2: Join Room", () => {
     });
   });
 
+  test("cancel request deletes join request and returns to room choice", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    // Set up a pending join request
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Joiner" });
+      const otherUserId = await ctx.db.insert("users", {
+        displayName: "Admin",
+      });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Apartment 4B",
+        inviteCode: "ABC123",
+        createdBy: otherUserId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId: otherUserId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+      await ctx.db.insert("joinRequests", {
+        roomId,
+        userId,
+        status: "pending",
+        createdAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    // Should auto-route to pending screen
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Your request to join Apartment 4B is pending approval",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    await user.click(
+      screen.getByRole("button", { name: /cancel request/i }),
+    );
+
+    // Should return to room choice screen
+    await waitFor(() => {
+      expect(screen.getByText("Get Started")).toBeInTheDocument();
+    });
+
+    // Verify join request deleted from database
+    await testClient.run(async (ctx: any) => {
+      const joinRequest = await ctx.db
+        .query("joinRequests")
+        .withIndex("userId", (q: any) => q.eq("userId", userId))
+        .first();
+      expect(joinRequest).toBeNull();
+    });
+  });
+
   test("back button on join form returns to room choice screen", async ({
     client,
     userId,
