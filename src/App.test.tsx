@@ -507,6 +507,32 @@ describe("Backend guards: room operations", () => {
     ).rejects.toThrow("Already in a room");
   });
 
+  test("getPendingJoinRequest returns null when unauthenticated", async ({
+    testClient,
+  }) => {
+    const result = await testClient.query(
+      api.rooms.getPendingJoinRequest,
+      {},
+    );
+    expect(result).toBeNull();
+  });
+
+  test("cancelJoinRequest throws when unauthenticated", async ({
+    testClient,
+  }) => {
+    await expect(
+      testClient.mutation(api.rooms.cancelJoinRequest, {}),
+    ).rejects.toThrow("Not authenticated");
+  });
+
+  test("cancelJoinRequest throws when no pending request", async ({
+    client,
+  }) => {
+    await expect(
+      client.mutation(api.rooms.cancelJoinRequest, {}),
+    ).rejects.toThrow("No pending request");
+  });
+
   test("requestJoinRoom throws when unauthenticated", async ({
     testClient,
   }) => {
