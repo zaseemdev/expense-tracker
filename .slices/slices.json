@@ -33,8 +33,8 @@
       "name": "Request to join room via invite link (pending admin approval)",
       "order": 4,
       "depends_on": ["AUTH-1", "PROFILE-1"],
-      "passes": false,
-      "spec_path": null
+      "passes": true,
+      "spec_path": "docs/specs/room-2/spec.md"
     },
     {
       "id": "EXPENSE-1",
