@@ -16,4 +16,18 @@ export default defineSchema({
   })
     .index("email", ["email"])
     .index("phone", ["phone"]),
+  rooms: defineTable({
+    name: v.string(),
+    inviteCode: v.string(),
+    createdBy: v.id("users"),
+  }).index("inviteCode", ["inviteCode"]),
+
+  roomMembers: defineTable({
+    roomId: v.id("rooms"),
+    userId: v.id("users"),
+    role: v.union(v.literal("admin"), v.literal("member")),
+    joinedAt: v.number(),
+  })
+    .index("userId", ["userId"])
+    .index("roomId", ["roomId"]),
 });
