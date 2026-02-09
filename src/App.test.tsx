@@ -142,6 +142,25 @@ describe("PROFILE-1: Display Name", () => {
   });
 });
 
+describe("Backend guards: unauthenticated access", () => {
+  test("getDisplayName returns null when unauthenticated", async ({
+    testClient,
+  }) => {
+    const result = await testClient.query(api.users.getDisplayName, {});
+    expect(result).toBeNull();
+  });
+
+  test("setDisplayName throws when unauthenticated", async ({
+    testClient,
+  }) => {
+    await expect(
+      testClient.mutation(api.users.setDisplayName, {
+        displayName: "Jaseem",
+      }),
+    ).rejects.toThrow("Not authenticated");
+  });
+});
+
 describe("Authenticated Shell", () => {
   test("does not show sign-in screen for authenticated users", async ({
     client,
