@@ -76,6 +76,22 @@ export const requestJoinRoom = mutation({
   },
 });
 
+export const cancelJoinRequest = mutation({
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const request = await ctx.db
+      .query("joinRequests")
+      .withIndex("userId", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("status"), "pending"))
+      .first();
+    if (!request) throw new Error("No pending request");
+
+    await ctx.db.delete(request._id);
+  },
+});
+
 export const createRoom = mutation({
   args: { name: v.string() },
   handler: async (ctx, args) => {

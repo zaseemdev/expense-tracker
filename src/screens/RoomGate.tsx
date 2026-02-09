@@ -7,12 +7,28 @@ export function RoomGate() {
     "choice",
   );
   const [pendingRoomName, setPendingRoomName] = useState("");
+  const [cancelled, setCancelled] = useState(false);
   const pendingRequest = useQuery(api.rooms.getPendingJoinRequest);
 
-  if (pendingRequest)
-    return <PendingApprovalScreen roomName={pendingRequest.roomName} />;
+  const onCancelled = () => {
+    setCancelled(true);
+    setView("choice");
+  };
+
+  if (pendingRequest && !cancelled)
+    return (
+      <PendingApprovalScreen
+        roomName={pendingRequest.roomName}
+        onCancelled={onCancelled}
+      />
+    );
   if (view === "pending")
-    return <PendingApprovalScreen roomName={pendingRoomName} />;
+    return (
+      <PendingApprovalScreen
+        roomName={pendingRoomName}
+        onCancelled={onCancelled}
+      />
+    );
   if (view === "create")
     return <CreateRoomForm onBack={() => setView("choice")} />;
   if (view === "join")
@@ -134,7 +150,15 @@ function JoinRoomForm({
   );
 }
 
-function PendingApprovalScreen({ roomName }: { roomName: string }) {
+function PendingApprovalScreen({
+  roomName,
+  onCancelled,
+}: {
+  roomName: string;
+  onCancelled: () => void;
+}) {
+  const cancelJoinRequest = useMutation(api.rooms.cancelJoinRequest);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 text-white px-6">
       <div className="flex flex-col items-center gap-2 mb-8">
@@ -149,6 +173,16 @@ function PendingApprovalScreen({ roomName }: { roomName: string }) {
           The room admin will review your request
         </p>
       </div>
+
+      <button
+        onClick={async () => {
+          await cancelJoinRequest();
+          onCancelled();
+        }}
+        className="text-zinc-400 text-sm hover:text-white transition-colors"
+      >
+        Cancel Request
+      </button>
     </div>
   );
 }
