@@ -19,6 +19,10 @@ export default defineConfig({
         "**/*.test.{ts,tsx}",
         "**/*.config.{ts,js}",
         "convex/_generated/",
+        "convex/auth.ts",
+        "convex/http.ts",
+        "convex/auth.config.ts",
+        "convex/schema.ts",
       ],
       thresholds: {
         lines: 100,
