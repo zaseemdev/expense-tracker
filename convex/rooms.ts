@@ -15,7 +15,7 @@ export const getCurrentRoom = query({
     return room;
   },
 });
-
+// TODO: Will this always generate a unique code?
 function generateInviteCode(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let code = "";
