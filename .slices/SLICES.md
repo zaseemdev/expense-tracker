@@ -9,7 +9,7 @@
 | 1 | AUTH-1 | Google OAuth sign in/sign up | — | Done |
 | 2 | PROFILE-1 | Enter display name on first login | AUTH-1 | Done |
 | 3 | ROOM-1 | Create room (creator = admin) | PROFILE-1 | Done |
-| 4 | ROOM-2 | Request to join room (pending approval) | AUTH-1, PROFILE-1 | Pending |
+| 4 | ROOM-2 | Request to join room (pending approval) | AUTH-1, PROFILE-1 | Done |
 | 5 | EXPENSE-1 | Add expense (date, amount, description) | ROOM-1/2 | Pending |
 | 6 | SPLIT-1 | Select roommates to split with | EXPENSE-1 | Pending |
 | 7 | EXPENSE-2 | Add another expense (sequential) | SPLIT-1 | Pending |

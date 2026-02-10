@@ -3,7 +3,7 @@
 **Project:** SplitEase - Roommate Expense Tracker
 **Platform:** Mobile-first (PWA or React Native)
 **Started:** 2026-02-06
-**Current Position:** Slice 3 (ROOM-1 complete)
+**Current Position:** Slice 4 (ROOM-2 complete)
 
 ## Progress
 
@@ -68,10 +68,20 @@
 - 16 tests, 100% coverage
 - Next: ROOM-2 (join room via invite link)
 
+### 2026-02-10
+- Completed ROOM-2: Request to join room via invite link
+- Join room form with invite code input
+- requestJoinRoom mutation creates pending join request
+- Pending approval screen with cancel option
+- cancelJoinRequest mutation for withdrawing requests
+- Backend guard tests for auth, duplicate requests, invalid codes
+- Coverage guard tests for getPendingJoinRequest and cancelJoinRequest
+- Next: EXPENSE-1 (add expense)
+
 ## Next Steps
 
-1. Run `/feather:work-slice` to start ROOM-2
-2. Join room via invite link with pending admin approval
+1. Run `/feather:work-slice` to start EXPENSE-1
+2. Add expense with date, amount, description
 
 ## Blockers
 
