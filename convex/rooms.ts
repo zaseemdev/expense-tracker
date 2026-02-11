@@ -2,6 +2,29 @@ import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
+export const getRoomMembers = query({
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+    const membership = await ctx.db
+      .query("roomMembers")
+      .withIndex("userId", (q) => q.eq("userId", userId))
+      .first();
+    if (!membership) return [];
+    const allMembers = await ctx.db
+      .query("roomMembers")
+      .withIndex("roomId", (q) => q.eq("roomId", membership.roomId))
+      .collect();
+    const members = await Promise.all(
+      allMembers.map(async (m) => {
+        const user = await ctx.db.get(m.userId);
+        return { userId: m.userId, displayName: user!.displayName! };
+      }),
+    );
+    return members;
+  },
+});
+
 export const getCurrentRoom = query({
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
