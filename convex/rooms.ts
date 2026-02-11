@@ -69,7 +69,6 @@ export const requestJoinRoom = mutation({
       roomId: room._id,
       userId,
       status: "pending",
-      createdAt: Date.now(),
     });
 
     return { roomName: room.name };

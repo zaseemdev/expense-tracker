@@ -579,7 +579,7 @@ describe("ROOM-2: Join Room", () => {
         roomId,
         userId,
         status: "pending",
-        createdAt: Date.now(),
+
       });
     });
 
@@ -779,7 +779,7 @@ describe("Backend guards: room operations", () => {
         roomId,
         userId,
         status: "pending",
-        createdAt: Date.now(),
+
       });
       await ctx.db.insert("rooms", {
         name: "Room B",

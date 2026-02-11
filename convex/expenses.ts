@@ -24,7 +24,6 @@ export const createExpense = mutation({
       amount: args.amount,
       date: args.date,
       description: args.description,
-      createdAt: Date.now(),
     });
   },
 });

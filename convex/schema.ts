@@ -37,7 +37,6 @@ export default defineSchema({
     amount: v.number(),
     date: v.string(),
     description: v.string(),
-    createdAt: v.number(),
   }).index("roomId", ["roomId"]),
 
   joinRequests: defineTable({
@@ -48,7 +47,6 @@ export default defineSchema({
       v.literal("approved"),
       v.literal("rejected"),
     ),
-    createdAt: v.number(),
   })
     .index("userId", ["userId"])
     .index("roomId_status", ["roomId", "status"]),
