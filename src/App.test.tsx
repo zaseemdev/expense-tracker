@@ -169,6 +169,170 @@ describe("Authenticated Shell", () => {
     await user.click(screen.getByRole("button", { name: /sign out/i }));
     expect(onSignOut).toHaveBeenCalled();
   });
+
+  test("shows room name in header and green '+' FAB", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Test User" });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Flat 42",
+        inviteCode: "ABC123",
+        createdBy: userId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(screen.getByText("Flat 42 Expenses")).toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("button", { name: /\+/i }),
+    ).toBeInTheDocument();
+  });
+
+  test("FAB opens add expense form, close returns to shell", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Test User" });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Flat 42",
+        inviteCode: "ABC123",
+        createdBy: userId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /\+/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /\+/i }));
+
+    expect(screen.getByText("Add Expense")).toBeInTheDocument();
+    expect(screen.getByLabelText("Date")).toBeInTheDocument();
+    expect(screen.getByLabelText("Amount")).toBeInTheDocument();
+    expect(screen.getByLabelText("Description")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /save/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /×/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /×/i }));
+
+    expect(screen.queryByText("Add Expense")).not.toBeInTheDocument();
+    expect(screen.getByText("Flat 42 Expenses")).toBeInTheDocument();
+  });
+
+  test("Save button disabled when fields empty, enabled when filled", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Test User" });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Flat 42",
+        inviteCode: "ABC123",
+        createdBy: userId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /\+/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /\+/i }));
+
+    expect(screen.getByRole("button", { name: /save/i })).toBeDisabled();
+
+    await user.type(screen.getByLabelText("Amount"), "450");
+    await user.type(screen.getByLabelText("Description"), "Groceries");
+
+    expect(screen.getByRole("button", { name: /save/i })).toBeEnabled();
+  });
+
+  test("submitting expense form creates expense in database and returns to shell", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    let roomId: any;
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Test User" });
+      roomId = await ctx.db.insert("rooms", {
+        name: "Flat 42",
+        inviteCode: "ABC123",
+        createdBy: userId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /\+/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /\+/i }));
+    await user.type(screen.getByLabelText("Amount"), "450");
+    await user.type(screen.getByLabelText("Description"), "Groceries - milk, bread");
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    // Form closes, returns to shell
+    await waitFor(() => {
+      expect(screen.getByText("Flat 42 Expenses")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Add Expense")).not.toBeInTheDocument();
+
+    // Verify database state
+    await testClient.run(async (ctx: any) => {
+      const expense = await ctx.db
+        .query("expenses")
+        .withIndex("roomId", (q: any) => q.eq("roomId", roomId))
+        .first();
+      expect(expense).not.toBeNull();
+      expect(expense!.amount).toBe(450);
+      expect(expense!.description).toBe("Groceries - milk, bread");
+      expect(expense!.paidBy).toEqual(userId);
+    });
+  });
 });
 
 describe("ROOM-1: Create Room", () => {
@@ -575,6 +739,26 @@ describe("Backend guards: room operations", () => {
     await expect(
       client.mutation(api.rooms.requestJoinRoom, { inviteCode: "XYZ789" }),
     ).rejects.toThrow("Already in a room");
+  });
+
+  test("createExpense throws when unauthenticated", async ({ testClient }) => {
+    await expect(
+      testClient.mutation(api.expenses.createExpense, {
+        amount: 450,
+        date: "2026-02-11",
+        description: "Groceries",
+      }),
+    ).rejects.toThrow("Not authenticated");
+  });
+
+  test("createExpense throws when not a room member", async ({ client }) => {
+    await expect(
+      client.mutation(api.expenses.createExpense, {
+        amount: 450,
+        date: "2026-02-11",
+        description: "Groceries",
+      }),
+    ).rejects.toThrow("Not a room member");
   });
 
   test("requestJoinRoom throws when user has pending request", async ({

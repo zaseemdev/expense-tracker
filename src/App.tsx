@@ -46,5 +46,5 @@ function RoomRouter({ onSignOut }: { onSignOut: () => void }) {
   if (currentRoom === undefined) return null;
   /* v8 ignore stop */
   if (currentRoom === null) return <RoomGate />;
-  return <AuthenticatedShell onSignOut={onSignOut} />;
+  return <AuthenticatedShell roomName={currentRoom.name} onSignOut={onSignOut} />;
 }
