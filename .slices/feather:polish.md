@@ -6,6 +6,7 @@ Items captured during development for later polish.
 
 - [ ] **BUG** tdd-guard not catching over-implementation — guards were implemented before their tests existed, and tdd-guard-vitest didn't block the GREEN commit (ROOM-2, commit 6883ee1). The guard should enforce that new implementation code cannot be committed without a corresponding failing test first.
 - [ ] **PERF** `/feather:work-slice` re-scans entire project structure and patterns every invocation — should persist project structure and coding patterns to files (e.g. `STRUCTURE.md`, `PATTERNS.md`) that get created on first run and updated incrementally as code evolves, rather than re-exploring from scratch each time. Saves context window and startup time.
+- [ ] **UX** Feather skills don't enforce folder structure — when creating new files (screens, components, convex functions), feather skills place them without consulting CLAUDE.md or any project structure convention. Should read folder conventions from CLAUDE.md and place new files accordingly.
 
 ## Done
 
