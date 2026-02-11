@@ -157,6 +157,37 @@ describe("Authenticated Shell", () => {
     expect(screen.getByRole("button", { name: /save/i })).toBeEnabled();
   });
 
+  test("navigating to /expenses/add shows add expense form directly", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Test User" });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Flat 42",
+        inviteCode: "ABC123",
+        createdBy: userId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(
+      <AuthenticatedRouter onSignOut={() => {}} />,
+      client,
+      { initialEntries: ["/expenses/add"] },
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Add Expense")).toBeInTheDocument();
+    });
+  });
+
   test("submitting expense form creates expense in database and returns to shell", async ({
     client,
     userId,

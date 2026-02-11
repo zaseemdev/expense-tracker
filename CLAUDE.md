@@ -2,7 +2,7 @@
 
 ## Quick Reference
 
-- **Stack:** React 19 + Vite 7 + Convex + Tailwind CSS v4 + TypeScript 5.9
+- **Stack:** React 19 + Vite 7 + Convex + React Router 7 + Tailwind CSS v4 + TypeScript 5.9
 - **Auth:** `@convex-dev/auth` with Google OAuth
 - **Testing:** Vitest 4 + Testing Library + jsdom + tdd-guard-vitest
 - **Coverage:** 100% thresholds (lines, branches, functions, statements)
@@ -31,7 +31,7 @@ expense-tracker/
 │   └── _generated/               # Auto-generated (never edit)
 ├── src/
 │   ├── App.tsx                   # Auth + route wiring (v8 ignore)
-│   ├── main.tsx                  # Entrypoint
+│   ├── main.tsx                  # Entrypoint (BrowserRouter + providers, v8 ignore)
 │   ├── index.css                 # Global styles
 │   ├── screens/                  # Full-screen components (one per route)
 │   ├── components/               # Shared UI components (create when needed)
@@ -81,7 +81,13 @@ Only test infrastructure (setup files, shared helpers like `renderWithConvex`). 
 
 Auth wiring layer, uses `/* v8 ignore */` — tested indirectly through sub-components.
 
-Currently handles routing via conditional rendering (auth state -> display name -> room -> shell). When a router library is added, route definitions will live here and each screen maps to a route. Screen components stay in `src/screens/`.
+Handles auth guards via conditional rendering (auth state -> display name -> room -> shell). Convex query results drive which screen renders — this is guard logic, not URL routing.
+
+### Routing (React Router 7)
+
+- Auth/profile/room guards are **not** URL routes — they render based on Convex query state in `App.tsx`.
+- URL routes live inside `AuthenticatedShell.tsx` using `<Routes>`. Add new routes there.
+- `main.tsx` wraps the app with `<BrowserRouter>`. Tests use `<MemoryRouter>` via `renderWithConvex`.
 
 ### `convex/`
 
