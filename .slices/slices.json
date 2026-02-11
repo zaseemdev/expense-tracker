@@ -41,8 +41,8 @@
       "name": "Add expense (date, amount, description)",
       "order": 5,
       "depends_on": ["ROOM-1", "ROOM-2"],
-      "passes": false,
-      "spec_path": null
+      "passes": true,
+      "spec_path": "docs/specs/expense-1/spec.md"
     },
     {
       "id": "SPLIT-1",

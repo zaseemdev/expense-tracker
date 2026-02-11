@@ -3,7 +3,7 @@
 **Project:** SplitEase - Roommate Expense Tracker
 **Platform:** Mobile-first (PWA or React Native)
 **Started:** 2026-02-06
-**Current Position:** Slice 4 (ROOM-2 complete)
+**Current Position:** Slice 5 (EXPENSE-1 complete)
 
 ## Progress
 
@@ -78,10 +78,20 @@
 - Coverage guard tests for getPendingJoinRequest and cancelJoinRequest
 - Next: EXPENSE-1 (add expense)
 
+### 2026-02-11
+- Completed EXPENSE-1: Add expense (date, amount, description)
+- Schema: expenses table (roomId, paidBy, amount, date, description)
+- Backend: createExpense mutation with auth + membership guards
+- Frontend: AuthenticatedShell shows room name + green FAB
+- AddExpenseForm with date/amount/description and validation
+- Removed redundant createdAt from expenses and joinRequests (Convex provides _creationTime)
+- 33 tests, 100% coverage
+- Next: SPLIT-1 (select roommates to split with)
+
 ## Next Steps
 
-1. Run `/feather:work-slice` to start EXPENSE-1
-2. Add expense with date, amount, description
+1. Run `/feather:work-slice` to start SPLIT-1
+2. Select roommates to split expense with
 
 ## Blockers
 
