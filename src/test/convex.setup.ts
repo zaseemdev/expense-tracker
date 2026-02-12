@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { createElement } from "react";
 import {
   createConvexTest,
