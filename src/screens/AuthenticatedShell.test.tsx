@@ -430,4 +430,92 @@ describe("Authenticated Shell", () => {
     expect(screen.queryByText("₹450.00")).not.toBeInTheDocument();
     expect(screen.getAllByText("₹225.00")).toHaveLength(2);
   });
+
+  test("Select All / Unselect All toggles all members", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Alice" });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Flat 42",
+        inviteCode: "ABC123",
+        createdBy: userId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+      const bobId = await ctx.db.insert("users", { displayName: "Bob" });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId: bobId,
+        role: "member",
+        joinedAt: Date.now(),
+      });
+      const charlieId = await ctx.db.insert("users", {
+        displayName: "Charlie",
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId: charlieId,
+        role: "member",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /\+/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /\+/i }));
+    await user.type(screen.getByLabelText("Amount"), "300");
+
+    // All checked → button says "Unselect All"
+    expect(
+      screen.getByRole("button", { name: /unselect all/i }),
+    ).toBeInTheDocument();
+
+    // Click "Unselect All" → all unchecked, button says "Select All"
+    await user.click(
+      screen.getByRole("button", { name: /unselect all/i }),
+    );
+    const checkboxes = screen.getAllByRole("checkbox");
+    checkboxes.forEach((cb) => expect(cb).not.toBeChecked());
+    expect(
+      screen.getByRole("button", { name: /select all/i }),
+    ).toBeInTheDocument();
+
+    // Click "Select All" → all checked with ₹100.00, button says "Unselect All"
+    await user.click(
+      screen.getByRole("button", { name: /select all/i }),
+    );
+    checkboxes.forEach((cb) => expect(cb).toBeChecked());
+    expect(screen.getAllByText("₹100.00")).toHaveLength(3);
+    expect(
+      screen.getByRole("button", { name: /unselect all/i }),
+    ).toBeInTheDocument();
+
+    // Uncheck one member manually → button switches to "Select All"
+    await user.click(checkboxes[1]);
+    expect(
+      screen.getByRole("button", { name: /select all/i }),
+    ).toBeInTheDocument();
+
+    // Click "Select All" re-checks all
+    await user.click(
+      screen.getByRole("button", { name: /select all/i }),
+    );
+    checkboxes.forEach((cb) => expect(cb).toBeChecked());
+    expect(
+      screen.getByRole("button", { name: /unselect all/i }),
+    ).toBeInTheDocument();
+  });
 });

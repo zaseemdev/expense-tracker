@@ -42,7 +42,13 @@ export function AddExpenseForm({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm text-zinc-400">Split with</span>
-            <button type="button" className="text-sm text-green-400">Unselect All</button>
+            <button type="button" className="text-sm text-green-400" onClick={() => {
+              if (unchecked.size === 0) {
+                setUnchecked(new Set(members.map((m) => m.userId)));
+              } else {
+                setUnchecked(new Set());
+              }
+            }}>{unchecked.size === 0 ? "Unselect All" : "Select All"}</button>
           </div>
           <div className="rounded-lg border border-zinc-800 divide-y divide-zinc-800">
             {members.map((m) => (
