@@ -306,4 +306,60 @@ describe("Authenticated Shell", () => {
     const amounts = screen.getAllByText("₹150.00");
     expect(amounts).toHaveLength(3);
   });
+
+  test("Save button disabled when all members unchecked", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Alice" });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Flat 42",
+        inviteCode: "ABC123",
+        createdBy: userId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+      const bobId = await ctx.db.insert("users", { displayName: "Bob" });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId: bobId,
+        role: "member",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /\+/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /\+/i }));
+    await user.type(screen.getByLabelText("Amount"), "300");
+    await user.type(screen.getByLabelText("Description"), "Groceries");
+
+    // Save enabled with members checked
+    expect(screen.getByRole("button", { name: /save/i })).toBeEnabled();
+
+    // Uncheck all members
+    const checkboxes = screen.getAllByRole("checkbox");
+    for (const cb of checkboxes) {
+      await user.click(cb);
+    }
+
+    // Save disabled when no members selected
+    expect(screen.getByRole("button", { name: /save/i })).toBeDisabled();
+
+    // Re-check one member re-enables Save
+    await user.click(checkboxes[0]);
+    expect(screen.getByRole("button", { name: /save/i })).toBeEnabled();
+  });
 });

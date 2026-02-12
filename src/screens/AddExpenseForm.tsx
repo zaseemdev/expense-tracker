@@ -14,6 +14,7 @@ export function AddExpenseForm({
   const [description, setDescription] = useState("");
   const members = useQuery(api.rooms.getRoomMembers) ?? [];
   const currentUserId = useQuery(api.users.getCurrentUserId);
+  const [unchecked, setUnchecked] = useState<Set<string>>(new Set());
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white">
@@ -47,7 +48,7 @@ export function AddExpenseForm({
             {members.map((m) => (
               <label key={m.userId} className="flex items-center justify-between px-3 py-3 cursor-pointer">
                 <div className="flex items-center gap-3">
-                  <input type="checkbox" defaultChecked className="accent-green-500" />
+                  <input type="checkbox" checked={!unchecked.has(m.userId)} onChange={() => setUnchecked((prev) => { const next = new Set(prev); if (next.has(m.userId)) next.delete(m.userId); else next.add(m.userId); return next; })} className="accent-green-500" />
                   <span>{m.displayName}</span>
                   {m.userId === currentUserId && <span className="text-xs text-zinc-400">You</span>}
                 </div>
@@ -58,7 +59,7 @@ export function AddExpenseForm({
             ))}
           </div>
         </div>
-        <button type="submit" disabled={!description.trim() || Number(amount) <= 0} className="w-full rounded-lg bg-green-500 py-3 font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-green-600 transition-colors">Save</button>
+        <button type="submit" disabled={!description.trim() || Number(amount) <= 0 || unchecked.size >= members.length} className="w-full rounded-lg bg-green-500 py-3 font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-green-600 transition-colors">Save</button>
       </form>
     </div>
   );
