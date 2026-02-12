@@ -52,8 +52,8 @@ export function AddExpenseForm({
                   <span>{m.displayName}</span>
                   {m.userId === currentUserId && <span className="text-xs text-zinc-400">You</span>}
                 </div>
-                {Number(amount) > 0 && members.length > 0 && (
-                  <span className="text-sm text-zinc-400">₹{(Number(amount) / members.length).toFixed(2)}</span>
+                {Number(amount) > 0 && !unchecked.has(m.userId) && (members.length - unchecked.size) > 0 && (
+                  <span className="text-sm text-zinc-400">₹{(Number(amount) / (members.length - unchecked.size)).toFixed(2)}</span>
                 )}
               </label>
             ))}

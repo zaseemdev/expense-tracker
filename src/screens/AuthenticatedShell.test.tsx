@@ -362,4 +362,72 @@ describe("Authenticated Shell", () => {
     await user.click(checkboxes[0]);
     expect(screen.getByRole("button", { name: /save/i })).toBeEnabled();
   });
+
+  test("toggling members updates inline split amounts", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Alice" });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Flat 42",
+        inviteCode: "ABC123",
+        createdBy: userId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+      const bobId = await ctx.db.insert("users", { displayName: "Bob" });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId: bobId,
+        role: "member",
+        joinedAt: Date.now(),
+      });
+      const charlieId = await ctx.db.insert("users", {
+        displayName: "Charlie",
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId: charlieId,
+        role: "member",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /\+/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /\+/i }));
+    await user.type(screen.getByLabelText("Amount"), "450");
+
+    // All 3 checked → ₹150.00 each
+    expect(screen.getAllByText("₹150.00")).toHaveLength(3);
+
+    // Uncheck Bob → Alice and Charlie show ₹225.00, Bob shows no amount
+    const checkboxes = screen.getAllByRole("checkbox");
+    // Bob is the second member checkbox
+    await user.click(checkboxes[1]);
+    expect(screen.queryByText("₹150.00")).not.toBeInTheDocument();
+    expect(screen.getAllByText("₹225.00")).toHaveLength(2);
+
+    // Uncheck Alice (payer) → only Charlie checked, shows ₹450.00
+    await user.click(checkboxes[0]);
+    expect(screen.queryByText("₹225.00")).not.toBeInTheDocument();
+    expect(screen.getAllByText("₹450.00")).toHaveLength(1);
+
+    // Re-check Bob → Bob and Charlie each show ₹225.00
+    await user.click(checkboxes[1]);
+    expect(screen.queryByText("₹450.00")).not.toBeInTheDocument();
+    expect(screen.getAllByText("₹225.00")).toHaveLength(2);
+  });
 });
