@@ -8,28 +8,14 @@ import { AuthenticatedRouter } from "../App";
 beforeEach(cleanup);
 
 describe("Authenticated Shell", () => {
-  test("shows shell with sign-out for users in a room", async ({
-    client,
-    userId,
-    testClient,
-  }) => {
+  test("shows shell with sign-out for users in a room", async ({ client }) => {
     const onSignOut = vi.fn();
     const user = userEvent.setup();
 
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Test User" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Test Room",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
-      await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
+    await client.mutation(api.users.setDisplayName, {
+      displayName: "Test User",
     });
+    await client.mutation(api.rooms.createRoom, { name: "Test Room" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={onSignOut} />, client);
 
@@ -46,57 +32,29 @@ describe("Authenticated Shell", () => {
     expect(onSignOut).toHaveBeenCalled();
   });
 
-  test("shows room name in header and green '+' FAB", async ({
-    client,
-    userId,
-    testClient,
-  }) => {
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Test User" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Flat 42",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
-      await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
+  test("shows room name in header and green '+' FAB", async ({ client }) => {
+    await client.mutation(api.users.setDisplayName, {
+      displayName: "Test User",
     });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
     await waitFor(() => {
       expect(screen.getByText("Flat 42 Expenses")).toBeInTheDocument();
     });
-    expect(
-      screen.getByRole("button", { name: /\+/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /\+/i })).toBeInTheDocument();
   });
 
   test("FAB opens add expense form, close returns to shell", async ({
     client,
-    userId,
-    testClient,
   }) => {
     const user = userEvent.setup();
 
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Test User" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Flat 42",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
-      await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
+    await client.mutation(api.users.setDisplayName, {
+      displayName: "Test User",
     });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
@@ -121,25 +79,13 @@ describe("Authenticated Shell", () => {
 
   test("Save button disabled when fields empty, enabled when filled", async ({
     client,
-    userId,
-    testClient,
   }) => {
     const user = userEvent.setup();
 
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Test User" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Flat 42",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
-      await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
+    await client.mutation(api.users.setDisplayName, {
+      displayName: "Test User",
     });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
@@ -159,29 +105,15 @@ describe("Authenticated Shell", () => {
 
   test("navigating to /expenses/add shows add expense form directly", async ({
     client,
-    userId,
-    testClient,
   }) => {
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Test User" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Flat 42",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
-      await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
+    await client.mutation(api.users.setDisplayName, {
+      displayName: "Test User",
     });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
 
-    renderWithConvex(
-      <AuthenticatedRouter onSignOut={() => {}} />,
-      client,
-      { initialEntries: ["/expenses/add"] },
-    );
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client, {
+      initialEntries: ["/expenses/add"],
+    });
 
     await waitFor(() => {
       expect(screen.getByText("Add Expense")).toBeInTheDocument();
@@ -195,21 +127,11 @@ describe("Authenticated Shell", () => {
   }) => {
     const user = userEvent.setup();
 
-    let roomId: any;
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Test User" });
-      roomId = await ctx.db.insert("rooms", {
-        name: "Flat 42",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
-      await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
+    await client.mutation(api.users.setDisplayName, {
+      displayName: "Test User",
     });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
+    const room = await client.query(api.rooms.getCurrentRoom, {});
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
@@ -219,7 +141,10 @@ describe("Authenticated Shell", () => {
 
     await user.click(screen.getByRole("button", { name: /\+/i }));
     await user.type(screen.getByLabelText("Amount"), "450");
-    await user.type(screen.getByLabelText("Description"), "Groceries - milk, bread");
+    await user.type(
+      screen.getByLabelText("Description"),
+      "Groceries - milk, bread",
+    );
     await user.click(screen.getByRole("button", { name: /save/i }));
 
     // Form closes, returns to shell
@@ -228,11 +153,11 @@ describe("Authenticated Shell", () => {
     });
     expect(screen.queryByText("Add Expense")).not.toBeInTheDocument();
 
-    // Verify database state
+    // TODO: replace with client.query once getExpenses query exists
     await testClient.run(async (ctx: any) => {
       const expense = await ctx.db
         .query("expenses")
-        .withIndex("roomId", (q: any) => q.eq("roomId", roomId))
+        .withIndex("roomId", (q: any) => q.eq("roomId", room!._id))
         .first();
       expect(expense).not.toBeNull();
       expect(expense!.amount).toBe(450);
@@ -243,38 +168,39 @@ describe("Authenticated Shell", () => {
 
   test("add expense form shows split-with checkboxes for all room members", async ({
     client,
-    userId,
     testClient,
+    createUser,
   }) => {
     const user = userEvent.setup();
 
+    // Alice creates room via mutation
+    await client.mutation(api.users.setDisplayName, { displayName: "Alice" });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
+    const room = await client.query(api.rooms.getCurrentRoom, {});
+
+    // Create Bob and Charlie as additional members
+    const bob = await createUser();
+    await bob.mutation(api.users.setDisplayName, { displayName: "Bob" });
+    const bobId = await bob.query(api.users.getCurrentUserId, {});
+
+    const charlie = await createUser();
+    await charlie.mutation(api.users.setDisplayName, {
+      displayName: "Charlie",
+    });
+    const charlieId = await charlie.query(api.users.getCurrentUserId, {});
+
+    // TODO: replace with seed() once it supports custom userId, or use approveJoinRequest mutation once it exists
     await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Alice" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Flat 42",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
       await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
-      const bobId = await ctx.db.insert("users", { displayName: "Bob" });
-      await ctx.db.insert("roomMembers", {
-        roomId,
+        roomId: room!._id,
         userId: bobId,
-        role: "member",
+        role: "member" as const,
         joinedAt: Date.now(),
       });
-      const charlieId = await ctx.db.insert("users", {
-        displayName: "Charlie",
-      });
       await ctx.db.insert("roomMembers", {
-        roomId,
+        roomId: room!._id,
         userId: charlieId,
-        role: "member",
+        role: "member" as const,
         joinedAt: Date.now(),
       });
     });
@@ -309,29 +235,27 @@ describe("Authenticated Shell", () => {
 
   test("Save button disabled when all members unchecked", async ({
     client,
-    userId,
     testClient,
+    createUser,
   }) => {
     const user = userEvent.setup();
 
+    // Alice creates room via mutation
+    await client.mutation(api.users.setDisplayName, { displayName: "Alice" });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
+    const room = await client.query(api.rooms.getCurrentRoom, {});
+
+    // Create Bob as additional member
+    const bob = await createUser();
+    await bob.mutation(api.users.setDisplayName, { displayName: "Bob" });
+    const bobId = await bob.query(api.users.getCurrentUserId, {});
+
+    // TODO: replace with seed() once it supports custom userId, or use approveJoinRequest mutation once it exists
     await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Alice" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Flat 42",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
       await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
-      const bobId = await ctx.db.insert("users", { displayName: "Bob" });
-      await ctx.db.insert("roomMembers", {
-        roomId,
+        roomId: room!._id,
         userId: bobId,
-        role: "member",
+        role: "member" as const,
         joinedAt: Date.now(),
       });
     });
@@ -365,38 +289,39 @@ describe("Authenticated Shell", () => {
 
   test("toggling members updates inline split amounts", async ({
     client,
-    userId,
     testClient,
+    createUser,
   }) => {
     const user = userEvent.setup();
 
+    // Alice creates room via mutation
+    await client.mutation(api.users.setDisplayName, { displayName: "Alice" });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
+    const room = await client.query(api.rooms.getCurrentRoom, {});
+
+    // Create Bob and Charlie as additional members
+    const bob = await createUser();
+    await bob.mutation(api.users.setDisplayName, { displayName: "Bob" });
+    const bobId = await bob.query(api.users.getCurrentUserId, {});
+
+    const charlie = await createUser();
+    await charlie.mutation(api.users.setDisplayName, {
+      displayName: "Charlie",
+    });
+    const charlieId = await charlie.query(api.users.getCurrentUserId, {});
+
+    // TODO: replace with seed() once it supports custom userId, or use approveJoinRequest mutation once it exists
     await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Alice" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Flat 42",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
       await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
-      const bobId = await ctx.db.insert("users", { displayName: "Bob" });
-      await ctx.db.insert("roomMembers", {
-        roomId,
+        roomId: room!._id,
         userId: bobId,
-        role: "member",
+        role: "member" as const,
         joinedAt: Date.now(),
       });
-      const charlieId = await ctx.db.insert("users", {
-        displayName: "Charlie",
-      });
       await ctx.db.insert("roomMembers", {
-        roomId,
+        roomId: room!._id,
         userId: charlieId,
-        role: "member",
+        role: "member" as const,
         joinedAt: Date.now(),
       });
     });
@@ -433,38 +358,39 @@ describe("Authenticated Shell", () => {
 
   test("Select All / Unselect All toggles all members", async ({
     client,
-    userId,
     testClient,
+    createUser,
   }) => {
     const user = userEvent.setup();
 
+    // Alice creates room via mutation
+    await client.mutation(api.users.setDisplayName, { displayName: "Alice" });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
+    const room = await client.query(api.rooms.getCurrentRoom, {});
+
+    // Create Bob and Charlie as additional members
+    const bob = await createUser();
+    await bob.mutation(api.users.setDisplayName, { displayName: "Bob" });
+    const bobId = await bob.query(api.users.getCurrentUserId, {});
+
+    const charlie = await createUser();
+    await charlie.mutation(api.users.setDisplayName, {
+      displayName: "Charlie",
+    });
+    const charlieId = await charlie.query(api.users.getCurrentUserId, {});
+
+    // TODO: replace with seed() once it supports custom userId, or use approveJoinRequest mutation once it exists
     await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Alice" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Flat 42",
-        inviteCode: "ABC123",
-        createdBy: userId,
-      });
       await ctx.db.insert("roomMembers", {
-        roomId,
-        userId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
-      const bobId = await ctx.db.insert("users", { displayName: "Bob" });
-      await ctx.db.insert("roomMembers", {
-        roomId,
+        roomId: room!._id,
         userId: bobId,
-        role: "member",
+        role: "member" as const,
         joinedAt: Date.now(),
       });
-      const charlieId = await ctx.db.insert("users", {
-        displayName: "Charlie",
-      });
       await ctx.db.insert("roomMembers", {
-        roomId,
+        roomId: room!._id,
         userId: charlieId,
-        role: "member",
+        role: "member" as const,
         joinedAt: Date.now(),
       });
     });
@@ -484,9 +410,7 @@ describe("Authenticated Shell", () => {
     ).toBeInTheDocument();
 
     // Click "Unselect All" → all unchecked, button says "Select All"
-    await user.click(
-      screen.getByRole("button", { name: /unselect all/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /unselect all/i }));
     const checkboxes = screen.getAllByRole("checkbox");
     checkboxes.forEach((cb) => expect(cb).not.toBeChecked());
     expect(
@@ -494,9 +418,7 @@ describe("Authenticated Shell", () => {
     ).toBeInTheDocument();
 
     // Click "Select All" → all checked with ₹100.00, button says "Unselect All"
-    await user.click(
-      screen.getByRole("button", { name: /select all/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /select all/i }));
     checkboxes.forEach((cb) => expect(cb).toBeChecked());
     expect(screen.getAllByText("₹100.00")).toHaveLength(3);
     expect(
@@ -510,9 +432,7 @@ describe("Authenticated Shell", () => {
     ).toBeInTheDocument();
 
     // Click "Select All" re-checks all
-    await user.click(
-      screen.getByRole("button", { name: /select all/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /select all/i }));
     checkboxes.forEach((cb) => expect(cb).toBeChecked());
     expect(
       screen.getByRole("button", { name: /unselect all/i }),

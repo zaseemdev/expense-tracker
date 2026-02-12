@@ -14,9 +14,7 @@ describe("PROFILE-1: Display Name", () => {
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
     await waitFor(() => {
-      expect(
-        screen.getByText("What should we call you?"),
-      ).toBeInTheDocument();
+      expect(screen.getByText("What should we call you?")).toBeInTheDocument();
     });
     expect(
       screen.getByText("This name will be visible to your roommates"),
@@ -33,9 +31,7 @@ describe("PROFILE-1: Display Name", () => {
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: /continue/i }),
-      ).toBeDisabled();
+      expect(screen.getByRole("button", { name: /continue/i })).toBeDisabled();
     });
   });
 
@@ -58,14 +54,8 @@ describe("PROFILE-1: Display Name", () => {
     expect(displayName).toBe("Jaseem");
   });
 
-  test("user with existing display name skips the form", async ({
-    client,
-    userId,
-    testClient,
-  }) => {
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Jaseem" });
-    });
+  test("user with existing display name skips the form", async ({ client }) => {
+    await client.mutation(api.users.setDisplayName, { displayName: "Jaseem" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 

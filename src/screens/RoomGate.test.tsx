@@ -8,14 +8,8 @@ import { AuthenticatedRouter } from "../App";
 beforeEach(cleanup);
 
 describe("ROOM-1: Create Room", () => {
-  test("user without a room sees room choice screen", async ({
-    client,
-    userId,
-    testClient,
-  }) => {
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Jaseem" });
-    });
+  test("user without a room sees room choice screen", async ({ client }) => {
+    await client.mutation(api.users.setDisplayName, { displayName: "Jaseem" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
@@ -32,14 +26,10 @@ describe("ROOM-1: Create Room", () => {
 
   test("clicking 'Create a Room' shows the create room form with disabled button", async ({
     client,
-    userId,
-    testClient,
   }) => {
     const user = userEvent.setup();
 
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Jaseem" });
-    });
+    await client.mutation(api.users.setDisplayName, { displayName: "Jaseem" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
@@ -52,21 +42,13 @@ describe("ROOM-1: Create Room", () => {
     await user.click(screen.getByRole("button", { name: /create a room/i }));
 
     expect(screen.getByLabelText("Room Name")).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /create room/i }),
-    ).toBeDisabled();
+    expect(screen.getByRole("button", { name: /create room/i })).toBeDisabled();
   });
 
-  test("back button returns to room choice screen", async ({
-    client,
-    userId,
-    testClient,
-  }) => {
+  test("back button returns to room choice screen", async ({ client }) => {
     const user = userEvent.setup();
 
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Jaseem" });
-    });
+    await client.mutation(api.users.setDisplayName, { displayName: "Jaseem" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
@@ -92,9 +74,7 @@ describe("ROOM-1: Create Room", () => {
   }) => {
     const user = userEvent.setup();
 
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Jaseem" });
-    });
+    await client.mutation(api.users.setDisplayName, { displayName: "Jaseem" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
@@ -118,6 +98,7 @@ describe("ROOM-1: Create Room", () => {
     expect(room.name).toBe("Apartment 4B");
     expect(room.inviteCode).toMatch(/^[A-Za-z0-9]{6}$/);
 
+    // TODO: replace with client.query once getRoomMembers returns role
     await testClient.run(async (ctx: any) => {
       const membership = await ctx.db
         .query("roomMembers")
@@ -132,14 +113,10 @@ describe("ROOM-1: Create Room", () => {
 describe("ROOM-2: Join Room", () => {
   test("clicking 'Join a Room' shows join form with disabled submit button", async ({
     client,
-    userId,
-    testClient,
   }) => {
     const user = userEvent.setup();
 
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Jaseem" });
-    });
+    await client.mutation(api.users.setDisplayName, { displayName: "Jaseem" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
@@ -156,35 +133,21 @@ describe("ROOM-2: Join Room", () => {
     expect(
       screen.getByRole("button", { name: /request to join/i }),
     ).toBeDisabled();
-    expect(
-      screen.getByRole("button", { name: /back/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
   });
 
   test("submitting valid invite code creates pending request and shows pending screen", async ({
     client,
-    userId,
-    testClient,
+    createUser,
   }) => {
     const user = userEvent.setup();
 
-    // Create a room owned by another user
-    let otherUserId: any;
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Joiner" });
-      otherUserId = await ctx.db.insert("users", { displayName: "Admin" });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Apartment 4B",
-        inviteCode: "ABC123",
-        createdBy: otherUserId,
-      });
-      await ctx.db.insert("roomMembers", {
-        roomId,
-        userId: otherUserId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
-    });
+    // Create a room owned by another user via mutations
+    await client.mutation(api.users.setDisplayName, { displayName: "Joiner" });
+    const admin = await createUser();
+    await admin.mutation(api.users.setDisplayName, { displayName: "Admin" });
+    await admin.mutation(api.rooms.createRoom, { name: "Apartment 4B" });
+    const room = await admin.query(api.rooms.getCurrentRoom, {});
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
@@ -195,10 +158,8 @@ describe("ROOM-2: Join Room", () => {
     });
 
     await user.click(screen.getByRole("button", { name: /join a room/i }));
-    await user.type(screen.getByLabelText("Invite Code"), "ABC123");
-    await user.click(
-      screen.getByRole("button", { name: /request to join/i }),
-    );
+    await user.type(screen.getByLabelText("Invite Code"), room!.inviteCode);
+    await user.click(screen.getByRole("button", { name: /request to join/i }));
 
     // Verify pending screen shows
     await waitFor(() => {
@@ -212,47 +173,26 @@ describe("ROOM-2: Join Room", () => {
       screen.getByText("The room admin will review your request"),
     ).toBeInTheDocument();
 
-    // Verify database state
-    await testClient.run(async (ctx: any) => {
-      const joinRequest = await ctx.db
-        .query("joinRequests")
-        .withIndex("userId", (q: any) => q.eq("userId", userId))
-        .first();
-      expect(joinRequest).not.toBeNull();
-      expect(joinRequest!.status).toBe("pending");
-    });
+    // Verify database state via query
+    const joinRequest = await client.query(api.rooms.getPendingJoinRequest, {});
+    expect(joinRequest).not.toBeNull();
+    expect(joinRequest!.status).toBe("pending");
   });
 
   test("cancel request deletes join request and returns to room choice", async ({
     client,
-    userId,
-    testClient,
+    createUser,
   }) => {
     const user = userEvent.setup();
 
-    // Set up a pending join request
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Joiner" });
-      const otherUserId = await ctx.db.insert("users", {
-        displayName: "Admin",
-      });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Apartment 4B",
-        inviteCode: "ABC123",
-        createdBy: otherUserId,
-      });
-      await ctx.db.insert("roomMembers", {
-        roomId,
-        userId: otherUserId,
-        role: "admin",
-        joinedAt: Date.now(),
-      });
-      await ctx.db.insert("joinRequests", {
-        roomId,
-        userId,
-        status: "pending",
-
-      });
+    // Set up a pending join request via mutations
+    await client.mutation(api.users.setDisplayName, { displayName: "Joiner" });
+    const admin = await createUser();
+    await admin.mutation(api.users.setDisplayName, { displayName: "Admin" });
+    await admin.mutation(api.rooms.createRoom, { name: "Apartment 4B" });
+    const room = await admin.query(api.rooms.getCurrentRoom, {});
+    await client.mutation(api.rooms.requestJoinRoom, {
+      inviteCode: room!.inviteCode,
     });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
@@ -266,9 +206,7 @@ describe("ROOM-2: Join Room", () => {
       ).toBeInTheDocument();
     });
 
-    await user.click(
-      screen.getByRole("button", { name: /cancel request/i }),
-    );
+    await user.click(screen.getByRole("button", { name: /cancel request/i }));
 
     // Should return to room choice screen
     await waitFor(() => {
@@ -276,25 +214,16 @@ describe("ROOM-2: Join Room", () => {
     });
 
     // Verify join request deleted from database
-    await testClient.run(async (ctx: any) => {
-      const joinRequest = await ctx.db
-        .query("joinRequests")
-        .withIndex("userId", (q: any) => q.eq("userId", userId))
-        .first();
-      expect(joinRequest).toBeNull();
-    });
+    const joinRequest = await client.query(api.rooms.getPendingJoinRequest, {});
+    expect(joinRequest).toBeNull();
   });
 
   test("back button on join form returns to room choice screen", async ({
     client,
-    userId,
-    testClient,
   }) => {
     const user = userEvent.setup();
 
-    await testClient.run(async (ctx) => {
-      await ctx.db.patch(userId, { displayName: "Jaseem" });
-    });
+    await client.mutation(api.users.setDisplayName, { displayName: "Jaseem" });
 
     renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
 
