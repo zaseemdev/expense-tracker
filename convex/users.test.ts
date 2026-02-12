@@ -10,6 +10,14 @@ describe("Backend guards: users", () => {
     expect(result).toBeNull();
   });
 
+  test("getCurrentUserId returns authenticated user's ID", async ({
+    client,
+    userId,
+  }) => {
+    const result = await client.query(api.users.getCurrentUserId, {});
+    expect(result).toEqual(userId);
+  });
+
   test("setDisplayName throws when unauthenticated", async ({
     testClient,
   }) => {

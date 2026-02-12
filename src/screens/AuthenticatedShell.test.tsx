@@ -240,4 +240,70 @@ describe("Authenticated Shell", () => {
       expect(expense!.paidBy).toEqual(userId);
     });
   });
+
+  test("add expense form shows split-with checkboxes for all room members", async ({
+    client,
+    userId,
+    testClient,
+  }) => {
+    const user = userEvent.setup();
+
+    await testClient.run(async (ctx) => {
+      await ctx.db.patch(userId, { displayName: "Alice" });
+      const roomId = await ctx.db.insert("rooms", {
+        name: "Flat 42",
+        inviteCode: "ABC123",
+        createdBy: userId,
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId,
+        role: "admin",
+        joinedAt: Date.now(),
+      });
+      const bobId = await ctx.db.insert("users", { displayName: "Bob" });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId: bobId,
+        role: "member",
+        joinedAt: Date.now(),
+      });
+      const charlieId = await ctx.db.insert("users", {
+        displayName: "Charlie",
+      });
+      await ctx.db.insert("roomMembers", {
+        roomId,
+        userId: charlieId,
+        role: "member",
+        joinedAt: Date.now(),
+      });
+    });
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /\+/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /\+/i }));
+    await user.type(screen.getByLabelText("Amount"), "450");
+
+    // "Split with" section with Unselect All button
+    expect(screen.getByText("Split with")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /unselect all/i }),
+    ).toBeInTheDocument();
+
+    // All members shown with checkboxes, all checked
+    const checkboxes = screen.getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(3);
+    checkboxes.forEach((cb) => expect(cb).toBeChecked());
+
+    // Current user labelled "You"
+    expect(screen.getByText("You")).toBeInTheDocument();
+
+    // Each checked member shows split amount
+    const amounts = screen.getAllByText("₹150.00");
+    expect(amounts).toHaveLength(3);
+  });
 });
