@@ -39,6 +39,14 @@ export default defineSchema({
     description: v.string(),
   }).index("roomId", ["roomId"]),
 
+  expenseSplits: defineTable({
+    expenseId: v.id("expenses"),
+    userId: v.id("users"),
+    amount: v.number(),
+  })
+    .index("expenseId", ["expenseId"])
+    .index("expenseId_userId", ["expenseId", "userId"]),
+
   joinRequests: defineTable({
     roomId: v.id("rooms"),
     userId: v.id("users"),
