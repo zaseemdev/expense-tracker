@@ -46,6 +46,27 @@ describe("Authenticated Shell", () => {
     expect(screen.getByRole("button", { name: /\+/i })).toBeInTheDocument();
   });
 
+  test("shows copy invite code button that copies code to clipboard", async ({ client }) => {
+    const user = userEvent.setup();
+
+    await client.mutation(api.users.setDisplayName, {
+      displayName: "Test User",
+    });
+    await client.mutation(api.rooms.createRoom, { name: "Flat 42" });
+    const room = await client.query(api.rooms.getCurrentRoom, {});
+
+    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /copy invite/i })).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: /copy invite/i }));
+
+    const clipboardText = await navigator.clipboard.readText();
+    expect(clipboardText).toBe(room!.inviteCode);
+  });
+
   test("FAB opens add expense form, close returns to shell", async ({
     client,
   }) => {

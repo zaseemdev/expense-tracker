@@ -1,46 +1,14 @@
 import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
 
 export function RoomGate() {
-  const [view, setView] = useState<"choice" | "create" | "join" | "pending">(
-    "choice",
-  );
-  const [pendingRoomName, setPendingRoomName] = useState("");
-  const [cancelled, setCancelled] = useState(false);
-  const pendingRequest = useQuery(api.rooms.getPendingJoinRequest);
+  const [view, setView] = useState<"choice" | "create" | "join">("choice");
 
-  const onCancelled = () => {
-    setCancelled(true);
-    setView("choice");
-  };
-
-  if (pendingRequest && !cancelled)
-    return (
-      <PendingApprovalScreen
-        roomName={pendingRequest.roomName}
-        onCancelled={onCancelled}
-      />
-    );
-  if (view === "pending")
-    return (
-      <PendingApprovalScreen
-        roomName={pendingRoomName}
-        onCancelled={onCancelled}
-      />
-    );
   if (view === "create")
     return <CreateRoomForm onBack={() => setView("choice")} />;
   if (view === "join")
-    return (
-      <JoinRoomForm
-        onBack={() => setView("choice")}
-        onSubmitted={(roomName) => {
-          setPendingRoomName(roomName);
-          setView("pending");
-        }}
-      />
-    );
+    return <JoinRoomForm onBack={() => setView("choice")} />;
   return (
     <RoomChoiceScreen
       onCreateRoom={() => setView("create")}
@@ -86,15 +54,9 @@ function RoomChoiceScreen({
   );
 }
 
-function JoinRoomForm({
-  onBack,
-  onSubmitted,
-}: {
-  onBack: () => void;
-  onSubmitted: (roomName: string) => void;
-}) {
+function JoinRoomForm({ onBack }: { onBack: () => void }) {
   const [inviteCode, setInviteCode] = useState("");
-  const requestJoinRoom = useMutation(api.rooms.requestJoinRoom);
+  const joinRoom = useMutation(api.rooms.joinRoom);
 
   const trimmed = inviteCode.trim();
 
@@ -130,13 +92,10 @@ function JoinRoomForm({
 
         <button
           disabled={trimmed.length === 0}
-          onClick={async () => {
-            const result = await requestJoinRoom({ inviteCode: trimmed });
-            onSubmitted(result.roomName);
-          }}
+          onClick={() => void joinRoom({ inviteCode: trimmed })}
           className="w-full bg-emerald-600 text-white font-medium rounded-lg py-3 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-500 transition-colors"
         >
-          Request to Join
+          Join
         </button>
 
         <button
@@ -146,43 +105,6 @@ function JoinRoomForm({
           Back
         </button>
       </div>
-    </div>
-  );
-}
-
-function PendingApprovalScreen({
-  roomName,
-  onCancelled,
-}: {
-  roomName: string;
-  onCancelled: () => void;
-}) {
-  const cancelJoinRequest = useMutation(api.rooms.cancelJoinRequest);
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-950 text-white px-6">
-      <div className="flex flex-col items-center gap-2 mb-8">
-        <div className="w-16 h-16 rounded-full bg-amber-600 flex items-center justify-center text-2xl mb-2">
-          ⏳
-        </div>
-        <h1 className="text-2xl font-bold">Pending Approval</h1>
-        <p className="text-zinc-400 text-sm text-center">
-          Your request to join {roomName} is pending approval
-        </p>
-        <p className="text-zinc-500 text-xs">
-          The room admin will review your request
-        </p>
-      </div>
-
-      <button
-        onClick={async () => {
-          await cancelJoinRequest();
-          onCancelled();
-        }}
-        className="text-zinc-400 text-sm hover:text-white transition-colors"
-      >
-        Cancel Request
-      </button>
     </div>
   );
 }

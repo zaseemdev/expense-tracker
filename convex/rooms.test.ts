@@ -40,51 +40,25 @@ describe("Backend guards: rooms", () => {
     ).rejects.toThrow("Already in a room");
   });
 
-  test("getPendingJoinRequest returns null when unauthenticated", async ({
-    testClient,
-  }) => {
-    const result = await testClient.query(
-      api.rooms.getPendingJoinRequest,
-      {},
-    );
-    expect(result).toBeNull();
-  });
-
-  test("cancelJoinRequest throws when unauthenticated", async ({
+  test("joinRoom throws when unauthenticated", async ({
     testClient,
   }) => {
     await expect(
-      testClient.mutation(api.rooms.cancelJoinRequest, {}),
-    ).rejects.toThrow("Not authenticated");
-  });
-
-  test("cancelJoinRequest throws when no pending request", async ({
-    client,
-  }) => {
-    await expect(
-      client.mutation(api.rooms.cancelJoinRequest, {}),
-    ).rejects.toThrow("No pending request");
-  });
-
-  test("requestJoinRoom throws when unauthenticated", async ({
-    testClient,
-  }) => {
-    await expect(
-      testClient.mutation(api.rooms.requestJoinRoom, {
+      testClient.mutation(api.rooms.joinRoom, {
         inviteCode: "ABC123",
       }),
     ).rejects.toThrow("Not authenticated");
   });
 
-  test("requestJoinRoom throws with invalid invite code", async ({
+  test("joinRoom throws with invalid invite code", async ({
     client,
   }) => {
     await expect(
-      client.mutation(api.rooms.requestJoinRoom, { inviteCode: "ZZZZZ1" }),
+      client.mutation(api.rooms.joinRoom, { inviteCode: "ZZZZZ1" }),
     ).rejects.toThrow("Invalid invite code");
   });
 
-  test("requestJoinRoom throws when user already in a room", async ({
+  test("joinRoom throws when user already in a room", async ({
     client,
     userId,
     testClient,
@@ -104,40 +78,30 @@ describe("Backend guards: rooms", () => {
     });
 
     await expect(
-      client.mutation(api.rooms.requestJoinRoom, { inviteCode: "XYZ789" }),
+      client.mutation(api.rooms.joinRoom, { inviteCode: "XYZ789" }),
     ).rejects.toThrow("Already in a room");
   });
 
-  test("requestJoinRoom throws when user has pending request", async ({
+});
+
+describe("joinRoom", () => {
+  test("joinRoom adds user as member directly", async ({
     client,
-    userId,
-    testClient,
+    createUser,
   }) => {
-    await testClient.run(async (ctx: any) => {
-      const otherUserId = await ctx.db.insert("users", {
-        displayName: "Admin",
-      });
-      const roomId = await ctx.db.insert("rooms", {
-        name: "Room A",
-        inviteCode: "AAA111",
-        createdBy: otherUserId,
-      });
-      await ctx.db.insert("joinRequests", {
-        roomId,
-        userId,
-        status: "pending",
+    const admin = await createUser();
+    await admin.mutation(api.users.setDisplayName, { displayName: "Admin" });
+    await admin.mutation(api.rooms.createRoom, { name: "Flat 42" });
+    const room = await admin.query(api.rooms.getCurrentRoom, {});
 
-      });
-      await ctx.db.insert("rooms", {
-        name: "Room B",
-        inviteCode: "BBB222",
-        createdBy: otherUserId,
-      });
+    const result = await client.mutation(api.rooms.joinRoom, {
+      inviteCode: room!.inviteCode,
     });
+    expect(result.roomName).toBe("Flat 42");
 
-    await expect(
-      client.mutation(api.rooms.requestJoinRoom, { inviteCode: "BBB222" }),
-    ).rejects.toThrow("Already have a pending request");
+    const myRoom = await client.query(api.rooms.getCurrentRoom, {});
+    expect(myRoom).not.toBeNull();
+    expect(myRoom!.name).toBe("Flat 42");
   });
 });
 

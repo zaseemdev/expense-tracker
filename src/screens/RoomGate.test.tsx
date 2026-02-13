@@ -131,18 +131,17 @@ describe("ROOM-2: Join Room", () => {
     expect(screen.getByText("Join a Room")).toBeInTheDocument();
     expect(screen.getByLabelText("Invite Code")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /request to join/i }),
+      screen.getByRole("button", { name: /^join$/i }),
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
   });
 
-  test("submitting valid invite code creates pending request and shows pending screen", async ({
+  test("submitting valid invite code joins room directly", async ({
     client,
     createUser,
   }) => {
     const user = userEvent.setup();
 
-    // Create a room owned by another user via mutations
     await client.mutation(api.users.setDisplayName, { displayName: "Joiner" });
     const admin = await createUser();
     await admin.mutation(api.users.setDisplayName, { displayName: "Admin" });
@@ -159,63 +158,14 @@ describe("ROOM-2: Join Room", () => {
 
     await user.click(screen.getByRole("button", { name: /join a room/i }));
     await user.type(screen.getByLabelText("Invite Code"), room!.inviteCode);
-    await user.click(screen.getByRole("button", { name: /request to join/i }));
+    await user.click(screen.getByRole("button", { name: /^join$/i }));
 
-    // Verify pending screen shows
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          "Your request to join Apartment 4B is pending approval",
-        ),
-      ).toBeInTheDocument();
+    // Verify user is now a member via DB query
+    await waitFor(async () => {
+      const myRoom = await client.query(api.rooms.getCurrentRoom, {});
+      expect(myRoom).not.toBeNull();
+      expect(myRoom!.name).toBe("Apartment 4B");
     });
-    expect(
-      screen.getByText("The room admin will review your request"),
-    ).toBeInTheDocument();
-
-    // Verify database state via query
-    const joinRequest = await client.query(api.rooms.getPendingJoinRequest, {});
-    expect(joinRequest).not.toBeNull();
-    expect(joinRequest!.status).toBe("pending");
-  });
-
-  test("cancel request deletes join request and returns to room choice", async ({
-    client,
-    createUser,
-  }) => {
-    const user = userEvent.setup();
-
-    // Set up a pending join request via mutations
-    await client.mutation(api.users.setDisplayName, { displayName: "Joiner" });
-    const admin = await createUser();
-    await admin.mutation(api.users.setDisplayName, { displayName: "Admin" });
-    await admin.mutation(api.rooms.createRoom, { name: "Apartment 4B" });
-    const room = await admin.query(api.rooms.getCurrentRoom, {});
-    await client.mutation(api.rooms.requestJoinRoom, {
-      inviteCode: room!.inviteCode,
-    });
-
-    renderWithConvex(<AuthenticatedRouter onSignOut={() => {}} />, client);
-
-    // Should auto-route to pending screen
-    await waitFor(() => {
-      expect(
-        screen.getByText(
-          "Your request to join Apartment 4B is pending approval",
-        ),
-      ).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: /cancel request/i }));
-
-    // Should return to room choice screen
-    await waitFor(() => {
-      expect(screen.getByText("Get Started")).toBeInTheDocument();
-    });
-
-    // Verify join request deleted from database
-    const joinRequest = await client.query(api.rooms.getPendingJoinRequest, {});
-    expect(joinRequest).toBeNull();
   });
 
   test("back button on join form returns to room choice screen", async ({

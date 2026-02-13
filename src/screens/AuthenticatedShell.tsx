@@ -5,9 +5,11 @@ import { AddExpenseForm } from "./AddExpenseForm";
 
 export function AuthenticatedShell({
   roomName,
+  inviteCode,
   onSignOut,
 }: {
   roomName: string;
+  inviteCode: string;
   onSignOut: () => void;
 }) {
   const navigate = useNavigate();
@@ -33,12 +35,21 @@ export function AuthenticatedShell({
           <div className="min-h-screen bg-zinc-950 text-white">
             <header className="flex items-center justify-between p-4 border-b border-zinc-800">
               <h1 className="text-lg font-bold">{roomName} Expenses</h1>
-              <button
-                onClick={onSignOut}
-                className="text-zinc-400 text-sm hover:text-white transition-colors"
-              >
-                Sign out
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => void navigator.clipboard.writeText(inviteCode)}
+                  className="text-zinc-400 text-sm hover:text-white transition-colors"
+                  aria-label="Copy invite code"
+                >
+                  Copy Invite
+                </button>
+                <button
+                  onClick={onSignOut}
+                  className="text-zinc-400 text-sm hover:text-white transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
             </header>
             <main className="p-4">
               <button
